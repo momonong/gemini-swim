@@ -1,26 +1,55 @@
-import asyncio
+import dash
+from dash import dcc, html
+import pandas as pd
+import plotly.express as px
 from database import fetch_data_from_db, connect_to_db, disconnect_from_db
-from gemini import interact_with_gemini
+import asyncio
+from fastapi import FastAPI
+from starlette.middleware.wsgi import WSGIMiddleware
 
-async def main():
-    # 打開數據庫連接
+# 創建 FastAPI 應用
+app = FastAPI()
+
+# 創建 Dash 應用
+dash_app = dash.Dash(__name__)
+
+
+# 從數據庫中提取數據
+async def get_data():
     await connect_to_db()
-
-    # 從數據庫中提取數據
-    df = await fetch_data_from_db(limit=5)
-    print("Database Data:")
-    print(df)
-
-    # 將數據庫中的每條記錄作為提示傳遞給 Gemini API
-    for index, row in df.iterrows():
-        prompt = f"請介紹一下 {row['name']} 在 {row['competition_event']} 的比賽成績 {row['grade']}。"
-        print(f"Prompt: {prompt}")
-        response = interact_with_gemini(prompt)
-        print("LangChain Response:")
-        print(response)
-
-    # 關閉數據庫連接
+    query = "SELECT * FROM swim_competitions WHERE gender = 'female' LIMIT 100"  # 根據需要修改查詢語句
+    df = await fetch_data_from_db(query)
     await disconnect_from_db()
+    return df
 
+
+# 獲取數據並創建圖表
+loop = asyncio.get_event_loop()
+df = loop.run_until_complete(get_data())
+
+# 創建散點圖
+fig = px.scatter(df, x="event_number", y="grade", color="gender", hover_data=["name"])
+
+# 定義 Dash 應用佈局
+dash_app.layout = html.Div(
+    children=[
+        html.H1(children="Swimming Competition Dashboard"),
+        dcc.Graph(id="example-graph", figure=fig),
+    ]
+)
+
+# 將 Dash 應用添加到 FastAPI 應用
+app.mount("/dash", WSGIMiddleware(dash_app.server))
+
+
+# 測試端點
+@app.get("/")
+async def read_root():
+    return {"message": "Hello, this is FastAPI!"}
+
+
+# 運行應用
 if __name__ == "__main__":
-    asyncio.run(main())
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
