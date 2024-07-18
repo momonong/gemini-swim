@@ -20,6 +20,8 @@ langchain-google-genai = "^1.0.7"
 fastapi = "^0.111.1"
 uvicorn = "^0.30.1"
 dash = "^2.17.1"
+flask = {extras = ["async"], version = "^3.0.3"}
+flask-caching = "^2.3.0"
 
 
 [build-system]
