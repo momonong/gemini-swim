@@ -1,27 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Swimming Competition Query</h1>
+<h1>游泳比賽查詢</h1>
 <form action="{{ url_for('query') }}" method="post">
     <div class="form-group">
-        <label for="gender">Gender:</label>
-        <select name="gender" id="gender" class="form-control">
-            <option value="男生">男生</option>
-            <option value="女生">女生</option>
-        </select>
+        <label for="competition_name">賽會名稱:</label>
+        <input type="text" name="competition_name" id="competition_name" class="form-control" required>
     </div>
     <div class="form-group">
-        <label for="event">Event:</label>
-        <input type="text" name="event" id="event" class="form-control">
+        <label for="name">姓名:</label>
+        <input type="text" name="name" id="name" class="form-control" required>
     </div>
     <div class="form-group">
-        <label for="min_grade">Minimum Grade:</label>
-        <input type="text" name="min_grade" id="min_grade" class="form-control" placeholder="00:00:00.00">
+        <label for="event_number">項次:</label>
+        <input type="text" name="event_number" id="event_number" class="form-control">
     </div>
     <div class="form-group">
-        <label for="max_grade">Maximum Grade:</label>
-        <input type="text" name="max_grade" id="max_grade" class="form-control" placeholder="99:59:59.99">
+        <label for="unit_name">單位名稱:</label>
+        <input type="text" name="unit_name" id="unit_name" class="form-control">
     </div>
-    <button type="submit" class="btn btn-primary">Query</button>
+    <div class="form-group">
+        <label for="competition_event">比賽項目:</label>
+        <input type="text" name="competition_event" id="competition_event" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-primary">查詢</button>
 </form>
 {% endblock %}

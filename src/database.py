@@ -1,32 +1,44 @@
-import pandas as pd
-from databases import Database
-from dotenv import load_dotenv
 import os
-import json
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import text
+from dotenv import load_dotenv
 
-# 加載 .env 文件
+# 加载 .env 文件
 load_dotenv()
 
-# 從環境變量中獲取數據庫URL
-DATABASE_URL = os.getenv("DATABASE_URL")
+# 从环境变量中获取数据库URL，并确保使用 asyncpg 驱动
+DATABASE_URL = os.getenv("DATABASE_URL").replace(
+    "postgresql://", "postgresql+asyncpg://"
+)
 
-# 創建數據庫連接
-database = Database(DATABASE_URL)
+# 创建异步引擎
+engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+
+# 创建异步会话工厂
+AsyncSessionLocal = sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
-async def fetch_data_from_db(query="SELECT * FROM swim_competitions LIMIT 5"):
-    # 從數據庫中提取數據
-    rows = await database.fetch_all(query)
-    # 轉換為 JSON 格式
-    json_data = [dict(row) for row in rows]
-    return json_data
+async def fetch_data_from_db(query):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(text(query))  # 使用 text 函数来包装查询
+        rows = result.fetchall()
+        json_data = [
+            dict(row._mapping) for row in rows
+        ]  # 使用 row._mapping 确保正确转换为字典
+        return json_data
 
 
 async def connect_to_db():
-    await database.connect()
+    async with engine.begin() as conn:
+        # 如果有模型定义，可以在这里创建表结构
+        # await conn.run_sync(Base.metadata.create_all)
+        pass
     print("Database connected successfully")
 
 
 async def disconnect_from_db():
-    await database.disconnect()
+    await engine.dispose()
     print("Database disconnected successfully")

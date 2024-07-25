@@ -1,34 +1,40 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Query Results</h1>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Competition Name</th>
-            <th>Event Number</th>
-            <th>Unit Name</th>
-            <th>Name</th>
-            <th>Gender</th>
-            <th>Event</th>
-            <th>Grade</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in results %}
-        <tr>
-            <td>{{ row.copetition_name }}</td>
-            <td>{{ row.event_number }}</td>
-            <td>{{ row.unit_name }}</td>
-            <td>{{ row.name }}</td>
-            <td>{{ row.gender }}</td>
-            <td>{{ row.comptetion_event }}</td>
-            <td>{{ row.grade }}</td>
-            <td>{{ row.status }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Query</a>
+<h1 class="text-center">{{ title }}</h1>
+<div class="d-flex justify-content-center">
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>賽會名稱</th>
+                    <th>項次</th>
+                    <th>單位名稱</th>
+                    <th>姓名</th>
+                    <th>性別</th>
+                    <th>比賽項目</th>
+                    <th>比賽成績</th>
+                    <th>狀態</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results %}
+                <tr>
+                    <td>{{ row['competition_name'] }}</td>
+                    <td>{{ row['event_number'] }}</td>
+                    <td>{{ row['unit_name'] }}</td>
+                    <td>{{ row['name'] }}</td>
+                    <td>{{ row['gender'] }}</td>
+                    <td>{{ row['competition_event'] }}</td>
+                    <td>{{ row['grade'] }}</td>
+                    <td>{{ row['status'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="d-flex justify-content-center mt-4">
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Back to query</a>
+</div>
 {% endblock %}

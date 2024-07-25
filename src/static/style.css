@@ -30,3 +30,16 @@ th, td {
 th {
     background-color: #f2f2f2;
 }
+
+.table th, .table td {
+    vertical-align: middle; /* 垂直居中 */
+    white-space: nowrap;  /* 禁止自动换行 */
+    overflow: hidden;
+    text-overflow: ellipsis; /* 溢出内容使用省略号表示 */
+}
+
+@media (min-width: 1200px) {
+    .table-responsive {
+        overflow-x: visible; /* 在大屏幕上取消水平滚动条 */
+    }
+}
