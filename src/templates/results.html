@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Query Results</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Competition Name</th>
+            <th>Event Number</th>
+            <th>Unit Name</th>
+            <th>Name</th>
+            <th>Gender</th>
+            <th>Event</th>
+            <th>Grade</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in results %}
+        <tr>
+            <td>{{ row.copetition_name }}</td>
+            <td>{{ row.event_number }}</td>
+            <td>{{ row.unit_name }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.gender }}</td>
+            <td>{{ row.comptetion_event }}</td>
+            <td>{{ row.grade }}</td>
+            <td>{{ row.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Query</a>
+{% endblock %}
