@@ -7,9 +7,8 @@ import datetime
 # 创建 Flask 应用
 app = Flask(__name__)
 
-
 # 异步获取数据函数
-async def query_db(competition_name, name, event_number, unit_name, competition_event):
+async def query_db(competition_name, name, event_number, unit_name, competition_event, competition_category):
     await connect_to_db()
 
     # 动态生成查询条件
@@ -22,6 +21,8 @@ async def query_db(competition_name, name, event_number, unit_name, competition_
         conditions.append(f"unit_name LIKE '%{unit_name}%'")
     if competition_event:
         conditions.append(f"competition_event LIKE '%{competition_event}%'")
+    if competition_category:
+        conditions.append(f"competition_category LIKE '%{competition_category}%'")
 
     # 组合查询条件
     condition_str = " AND ".join(conditions)
@@ -31,15 +32,12 @@ async def query_db(competition_name, name, event_number, unit_name, competition_
     await disconnect_from_db()
     return results
 
-
 # 同步包装异步函数
-def get_query_results(
-    competition_name, name, event_number, unit_name, competition_event
-):
+def get_query_results(competition_name, name, event_number, unit_name, competition_event, competition_category):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     results = loop.run_until_complete(
-        query_db(competition_name, name, event_number, unit_name, competition_event)
+        query_db(competition_name, name, event_number, unit_name, competition_event, competition_category)
     )
 
     # 处理比賽成績字段和狀態字段
@@ -65,11 +63,9 @@ def get_query_results(
 
     return results
 
-
 @app.route("/")
 def index():
     return render_template("index.html", title="Swimming Competition Dashboard")
-
 
 @app.route("/query", methods=["GET", "POST"])
 def query():
@@ -79,16 +75,16 @@ def query():
         event_number = request.form.get("event_number")
         unit_name = request.form.get("unit_name")
         competition_event = request.form.get("competition_event")
+        competition_category = request.form.get("competition_category")
 
         results = get_query_results(
-            competition_name, name, event_number, unit_name, competition_event
+            competition_name, name, event_number, unit_name, competition_event, competition_category
         )
         df = pd.DataFrame(results)
         return render_template(
             "results.html", title="Query Results", results=df.to_dict(orient="records")
         )
     return render_template("query.html", title="Swimming Competition Query")
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
