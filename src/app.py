@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from flask import Flask, render_template, request
 from flask_caching import Cache
 import dash
@@ -8,6 +9,7 @@ import plotly.express as px
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
+from database import fetch_data_from_db, connect_to_db, disconnect_from_db
 from dotenv import load_dotenv
 import os
 
@@ -30,19 +32,20 @@ app = dash.Dash(__name__, server=server, url_base_pathname="/dash/")
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+# 替换这个函数
+async def get_data():
+    async with async_session() as session:
+        query = text("SELECT * FROM swim_competitions WHERE gender = '女生' LIMIT 100")
+        result = await session.execute(query)
+        rows = result.fetchall()
+    return [dict(row._mapping) for row in rows]
+
 # 从数据库中提取数据并缓存
 @cache.cached(timeout=60, key_prefix="all_swim_data")
 def get_data_sync():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     return loop.run_until_complete(get_data())
-
-async def get_data():
-    async with async_session() as session:
-        query = text("SELECT * FROM swim_competitions WHERE gender = '女生' LIMIT 100")
-        result = await session.execute(query)
-        rows = result.fetchall()
-    return [dict(row) for row in rows]
 
 # 获取数据并创建图表
 json_data = get_data_sync()
@@ -92,25 +95,59 @@ def update_graph(selected_gender):
     scatter_fig, bar_fig, line_fig = create_figures(filtered_df)
     return scatter_fig, bar_fig, line_fig
 
-# 异步获取数据函数
-async def query_db(gender, event, min_grade, max_grade):
-    async with async_session() as session:
-        query = text(f"""
-        SELECT * FROM swim_competitions 
-        WHERE gender = '{gender}' 
-        AND comptetion_event LIKE '%{event}%'
-        AND grade >= '{min_grade}'
-        AND grade <= '{max_grade}'
-        """)
-        result = await session.execute(query)
-        rows = result.fetchall()
-    return [dict(row) for row in rows]
+async def query_db(competition_name, name, event_number, unit_name, competition_event, competition_category):
+    await connect_to_db()
+
+    # 动态生成查询条件
+    conditions = ["1=1"]  # 使用 1=1 作为占位符，确保后续添加条件时语法正确
+    conditions.append(f"competition_name LIKE '%{competition_name}%'")
+    conditions.append(f"name LIKE '%{name}%'")
+    if event_number:
+        conditions.append(f"event_number = {event_number}")
+    if unit_name:
+        conditions.append(f"unit_name LIKE '%{unit_name}%'")
+    if competition_event:
+        conditions.append(f"competition_event LIKE '%{competition_event}%'")
+    if competition_category:
+        conditions.append(f"competition_category LIKE '%{competition_category}%'")
+
+    # 组合查询条件
+    condition_str = " AND ".join(conditions)
+    query = f"SELECT * FROM swim_competitions WHERE {condition_str}"
+
+    results = await fetch_data_from_db(query)
+    await disconnect_from_db()
+    return results
 
 # 同步包装异步函数
-def get_query_results(gender, event, min_grade, max_grade):
+def get_query_results(competition_name, name, event_number, unit_name, competition_event, competition_category):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    results = loop.run_until_complete(query_db(gender, event, min_grade, max_grade))
+    results = loop.run_until_complete(
+        query_db(competition_name, name, event_number, unit_name, competition_event, competition_category)
+    )
+
+    # 处理比賽成績字段和狀態字段
+    for result in results:
+        grade = result["grade"]
+        if grade is None:
+            result["grade"] = ""
+        elif isinstance(grade, (int, float)):
+            result["grade"] = f"{grade:.2f}"
+        elif isinstance(grade, str):
+            try:
+                result["grade"] = f"{float(grade):.2f}"
+            except ValueError:
+                result["grade"] = grade
+        elif isinstance(grade, datetime.time):
+            result["grade"] = grade.strftime("%H:%M:%S.%f")[:-4]
+        else:
+            result["grade"] = str(grade)
+
+        # 处理狀態字段
+        if result["status"] is None:
+            result["status"] = ""
+
     return results
 
 # 定义 Flask 路由
