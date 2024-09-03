@@ -23,6 +23,7 @@ dash = "^2.17.1"
 flask = {extras = ["async"], version = "^3.0.3"}
 flask-caching = "^2.3.0"
 psycopg2-binary = "^2.9.9"
+google-cloud-aiplatform = "^1.64.0"
 
 
 [build-system]
